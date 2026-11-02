@@ -1,0 +1,6 @@
+{
+  "name": "SMARTLAB Management",
+  "description": "نظام إداري سحابي متكامل لإدارة مركز SMARTLAB للتدريب المختبري (الطلاب، المجاميع، الأقساط، الحضور، المصروفات، والتقارير)",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

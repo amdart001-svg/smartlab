@@ -1,0 +1,216 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net: Default-deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Functions ---
+
+    function isValidTrainingGroup(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 150 &&
+             data.courseName is string && data.courseName.size() > 0 && data.courseName.size() <= 150 &&
+             data.totalPrice is number && data.totalPrice >= 0 &&
+             data.status in ['registering', 'completed_capacity', 'pending_start', 'active', 'postponed', 'halted', 'finished'] &&
+             (!('startDate' in data) || data.startDate == null || (data.startDate is string && data.startDate.size() <= 100)) &&
+             (!('startTime' in data) || data.startTime == null || (data.startTime is string && data.startTime.size() <= 50)) &&
+             (!('lectureDays' in data) || data.lectureDays == null || (data.lectureDays is string && data.lectureDays.size() <= 100)) &&
+             (!('lectureTime' in data) || data.lectureTime == null || (data.lectureTime is string && data.lectureTime.size() <= 100)) &&
+             (!('duration' in data) || data.duration == null || (data.duration is string && data.duration.size() <= 100)) &&
+             (!('trainerName' in data) || data.trainerName == null || (data.trainerName is string && data.trainerName.size() <= 100)) &&
+             (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 1000)) &&
+             (!('maxSeats' in data) || data.maxSeats == null || data.maxSeats is number) &&
+             (!('isArchived' in data) || data.isArchived == null || data.isArchived is bool);
+    }
+
+    function isValidStudent(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 150 &&
+             data.phone is string && data.phone.size() > 0 && data.phone.size() <= 50 &&
+             data.groupId is string && data.groupId.size() > 0 && data.groupId.size() <= 128 &&
+             data.totalPrice is number && data.totalPrice >= 0 &&
+             data.adminStatus in ['newly_registered', 'confirmed', 'awaiting_start', 'attending', 'absent', 'suspended', 'withdrawn', 'completed'] &&
+             data.financialStatus in ['paid_in_full', 'partially_paid', 'unpaid', 'installment_due', 'overdue'] &&
+             (!('paidAmount' in data) || data.paidAmount == null || (data.paidAmount is number && data.paidAmount >= 0)) &&
+             (!('remainingAmount' in data) || data.remainingAmount == null || data.remainingAmount is number) &&
+             (!('installmentCount' in data) || data.installmentCount == null || data.installmentCount is number) &&
+             (!('installmentDates' in data) || data.installmentDates == null || (data.installmentDates is string && data.installmentDates.size() <= 500)) &&
+             (!('groupName' in data) || data.groupName == null || (data.groupName is string && data.groupName.size() <= 150)) &&
+             (!('courseName' in data) || data.courseName == null || (data.courseName is string && data.courseName.size() <= 150)) &&
+             (!('photoUrl' in data) || data.photoUrl == null || (data.photoUrl is string && data.photoUrl.size() <= 1000)) &&
+             (!('registrationDate' in data) || data.registrationDate == null || (data.registrationDate is string && data.registrationDate.size() <= 100)) &&
+             (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 1000)) &&
+             (!('isArchived' in data) || data.isArchived == null || data.isArchived is bool);
+    }
+
+    function isValidPayment(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.studentId is string && data.studentId.size() > 0 && data.studentId.size() <= 128 &&
+             data.groupId is string && data.groupId.size() > 0 && data.groupId.size() <= 128 &&
+             data.amount is number && data.amount > 0 &&
+             data.paymentMethod is string && data.paymentMethod.size() > 0 && data.paymentMethod.size() <= 50 &&
+             (!('studentName' in data) || data.studentName == null || (data.studentName is string && data.studentName.size() <= 150)) &&
+             (!('paymentDate' in data) || data.paymentDate == null || (data.paymentDate is string && data.paymentDate.size() <= 100)) &&
+             (!('receivedBy' in data) || data.receivedBy == null || (data.receivedBy is string && data.receivedBy.size() <= 100)) &&
+             (!('receiptNumber' in data) || data.receiptNumber == null || (data.receiptNumber is string && data.receiptNumber.size() <= 100)) &&
+             (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 1000)) &&
+             (!('isCancelled' in data) || data.isCancelled == null || data.isCancelled is bool) &&
+             (!('cancellationReason' in data) || data.cancellationReason == null || (data.cancellationReason is string && data.cancellationReason.size() <= 500));
+    }
+
+    function isValidAttendanceRecord(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.groupId is string && data.groupId.size() > 0 && data.groupId.size() <= 128 &&
+             data.lectureDate is string && data.lectureDate.size() > 0 && data.lectureDate.size() <= 50 &&
+             (!('lectureTitle' in data) || data.lectureTitle == null || (data.lectureTitle is string && data.lectureTitle.size() <= 150)) &&
+             (!('records' in data) || data.records == null || (data.records is string && data.records.size() <= 50000)) &&
+             (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidExpense(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 150 &&
+             data.amount is number && data.amount > 0 &&
+             data.category is string && data.category.size() > 0 && data.category.size() <= 100 &&
+             data.date is string && data.date.size() > 0 && data.date.size() <= 50 &&
+             (!('groupId' in data) || data.groupId == null || (data.groupId is string && data.groupId.size() <= 128)) &&
+             (!('responsiblePerson' in data) || data.responsiblePerson == null || (data.responsiblePerson is string && data.responsiblePerson.size() <= 100)) &&
+             (!('notes' in data) || data.notes == null || (data.notes is string && data.notes.size() <= 1000));
+    }
+
+    function isValidAuditLog(data) {
+      return data.userId is string && data.userId.size() > 0 &&
+             data.action is string && data.action.size() > 0 && data.action.size() <= 100 &&
+             data.entityType is string && data.entityType.size() > 0 && data.entityType.size() <= 100 &&
+             data.entityId is string && data.entityId.size() > 0 && data.entityId.size() <= 128 &&
+             (!('performedBy' in data) || data.performedBy == null || (data.performedBy is string && data.performedBy.size() <= 100)) &&
+             (!('details' in data) || data.details == null || (data.details is string && data.details.size() <= 5000)) &&
+             (!('timestamp' in data) || data.timestamp == null || (data.timestamp is string && data.timestamp.size() <= 100));
+    }
+
+    // --- Subcollections scoped under users/{userId} ---
+
+    match /users/{userId} {
+      // Training Groups
+      match /groups/{groupId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(groupId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidTrainingGroup(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(groupId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidTrainingGroup(incoming());
+        allow delete: if isOwner(userId) && isValidId(groupId);
+      }
+
+      // Students
+      match /students/{studentId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(studentId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidStudent(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(studentId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidStudent(incoming());
+        allow delete: if isOwner(userId) && isValidId(studentId);
+      }
+
+      // Payments
+      match /payments/{paymentId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(paymentId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidPayment(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(paymentId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidPayment(incoming());
+        // Soft delete/cancellation preferred in audit system, but allow delete if required by user
+        allow delete: if isOwner(userId) && isValidId(paymentId);
+      }
+
+      // Attendance
+      match /attendance/{attendanceId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(attendanceId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidAttendanceRecord(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(attendanceId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidAttendanceRecord(incoming());
+        allow delete: if isOwner(userId) && isValidId(attendanceId);
+      }
+
+      // Expenses
+      match /expenses/{expenseId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(expenseId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidExpense(incoming());
+        allow update: if isOwner(userId) &&
+                         isValidId(expenseId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         isValidExpense(incoming());
+        allow delete: if isOwner(userId) && isValidId(expenseId);
+      }
+
+      // Audit Logs (Append-only & read by owner, never deleted or updated)
+      match /audit_logs/{logId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) &&
+                         isValidId(logId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().createdAt is timestamp &&
+                         incoming().createdAt <= request.time &&
+                         isValidAuditLog(incoming());
+        allow update, delete: if false;
+      }
+    }
+  }
+}

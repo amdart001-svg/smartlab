@@ -1,0 +1,169 @@
+{
+  "entities": {
+    "TrainingGroup": {
+      "title": "TrainingGroup",
+      "description": "A lab training group session at SMARTLAB",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "Admin UID owning the group" },
+        "name": { "type": "string", "description": "Group name or number" },
+        "courseName": { "type": "string", "description": "Course name, e.g. Medical Laboratory Analysis" },
+        "registrationDate": { "type": "string", "format": "date-time" },
+        "startDate": { "type": "string", "description": "Planned start date" },
+        "startTime": { "type": "string", "description": "Class start time e.g. 16:00" },
+        "lectureDays": { "type": "string", "description": "Days of week, e.g. Sat, Mon, Wed" },
+        "lectureTime": { "type": "string", "description": "Lecture time duration/schedule" },
+        "duration": { "type": "string", "description": "Course duration e.g. 6 Weeks" },
+        "maxSeats": { "type": "number", "description": "Maximum available seats" },
+        "trainerName": { "type": "string", "description": "Assigned trainer or lab supervisor" },
+        "totalPrice": { "type": "number", "description": "Course tuition in IQD" },
+        "status": {
+          "type": "string",
+          "enum": ["registering", "completed_capacity", "pending_start", "active", "postponed", "halted", "finished"]
+        },
+        "notes": { "type": "string" },
+        "isArchived": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "courseName", "totalPrice", "status", "createdAt"]
+    },
+    "Student": {
+      "title": "Student",
+      "description": "Student registered in SMARTLAB",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "Admin UID owning the student record" },
+        "fullName": { "type": "string" },
+        "phone": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "registrationDate": { "type": "string" },
+        "groupId": { "type": "string" },
+        "groupName": { "type": "string" },
+        "courseName": { "type": "string" },
+        "totalPrice": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "remainingAmount": { "type": "number" },
+        "installmentCount": { "type": "number" },
+        "installmentDates": { "type": "string" },
+        "adminStatus": {
+          "type": "string",
+          "enum": ["newly_registered", "confirmed", "awaiting_start", "attending", "absent", "suspended", "withdrawn", "completed"]
+        },
+        "financialStatus": {
+          "type": "string",
+          "enum": ["paid_in_full", "partially_paid", "unpaid", "installment_due", "overdue"]
+        },
+        "notes": { "type": "string" },
+        "isArchived": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "fullName", "phone", "groupId", "totalPrice", "adminStatus", "financialStatus", "createdAt"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Installment payment record for student tuition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "groupId": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "paymentDate": { "type": "string" },
+        "receivedBy": { "type": "string" },
+        "receiptNumber": { "type": "string" },
+        "notes": { "type": "string" },
+        "isCancelled": { "type": "boolean" },
+        "cancellationReason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "studentId", "groupId", "amount", "paymentMethod", "createdAt"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Daily lecture attendance tracking",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "groupId": { "type": "string" },
+        "lectureDate": { "type": "string" },
+        "lectureTitle": { "type": "string" },
+        "records": { "type": "string", "description": "JSON serialized map of studentId to status: present, absent, late, excused" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "groupId", "lectureDate", "createdAt"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "Administrative and laboratory operational expenses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "category": { "type": "string" },
+        "groupId": { "type": "string" },
+        "responsiblePerson": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "amount", "category", "date", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable log of administrative & financial changes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "action": { "type": "string" },
+        "entityType": { "type": "string" },
+        "entityId": { "type": "string" },
+        "performedBy": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "action", "entityType", "entityId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/groups/{groupId}": {
+      "schema": { "$ref": "#/entities/TrainingGroup" },
+      "description": "Training groups managed by center admin"
+    },
+    "/users/{userId}/students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Students enrolled in center"
+    },
+    "/users/{userId}/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Tuition installment payments"
+    },
+    "/users/{userId}/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Lecture attendance records per group"
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": { "$ref": "#/entities/Expense" },
+      "description": "Lab and administrative operating expenses"
+    },
+    "/users/{userId}/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Audit trails of financial and administrative actions"
+    }
+  }
+}
